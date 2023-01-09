@@ -1,0 +1,16 @@
+#!/bin/bash
+echo "Enter number of cycles"
+read total
+echo "Enter host"
+read host
+for ((i=1; i<= total; i++))
+do
+	curl -X GET $host
+	curl -X GET $host
+	curl -X GET $host
+	curl -X GET $host
+	curl -X GET $host
+	curl -X GET $host
+	curl -X GET $host
+	curl -X GET $host
+done

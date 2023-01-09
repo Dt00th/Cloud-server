@@ -1,0 +1,39 @@
+<html>
+	<head>
+		<title>Cloud</title>
+		<link rel="icon" type="image/png" href="/main/images/icon.png">
+		<link rel="stylesheet" href="/main/main.css">
+	</head>
+	<body>
+
+		<div class="search-wrapper">
+			<label for="search">Search files</label>
+			<input type="search" id="search" data-search>
+		</div>
+
+		<div class="file-cards" data-file-cards-container></div>
+
+		<template data-file-template>
+			<div class="card">
+				<a class="header" data-header-embed>
+					<div class="header" data-header></div>
+				</a>
+				<a class="body" data-body-embed>
+					<div class="body" data-body></div>
+				</a>
+			</div>
+		</template>
+
+
+		<form method="post" enctype="multipart/form-data" id="cform">
+			<div class="drop-zone">
+				<span class="drop-zone__prompt">Drop file here or click to upload</span>
+				<input type="file" name="file" id="file" class="drop-zone__input">
+				<input type="submit">
+			</div>
+		</form>
+
+
+		<script src="/main/main.js" type="text/javascript"></script>
+	</body>
+</html>
