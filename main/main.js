@@ -1,4 +1,3 @@
-
 const fileCardTemplate = document.querySelector("[data-file-template]")
 const fileCardContainer = document.querySelector("[data-file-cards-container]")
 const searchInput = document.querySelector("[data-search]")
@@ -32,51 +31,40 @@ fetch("/main/files.json")
   })
 
 
-//fs.readdir('files/', (err, files) => {
-//    fileList = files.map(file => {
-//        const card = fileCardTemplate.content.cloneNode(true).children[0];
-//        const header = card.querySelector("[data-header]");
-//        const body = card.querySelector("[data-body]");
-//        header.textContent = file.name
-//        body.textContent= file.name;
-//        fileCardContainer.append(card);
-//        return {name : file.name, element: card};
-//    });
-//});
 
+const dropZone = document.getElementById('drop-zone');
+const uploadForm = document.getElementById('upload-form');
+const fileInput = document.getElementById('file-input');
 
+// Handle dragover event to highlight drop zone when files are dragged over it
+dropZone.addEventListener('dragover', (e) => {
+	e.preventDefault();
+	dropZone.classList.add('dragover');
+});
 
+// Handle dragover event to remove highlight when files are dragged out of the drop zone
+dropZone.addEventListener('dragleave', () => {
+	dropZone.classList.remove('dragover');
+});
 
+// Handle drop event to display dropped files
+dropZone.addEventListener('drop', async (e) => {
+	e.preventDefault();
+	dropZone.classList.remove('dragover');
 
-document.querySelectorAll(".drop-zone__input").forEach(inputElement => {
-    const dropZoneElement = inputElement.closest(".drop-zone");
+	const formData = new FormData();
 
-    dropZoneElement.addEventListener("click", e=>{
-        inputElement.click();
-    });
+	// Loop through the dropped files and add them to the FormData object
+	for (const file of e.dataTransfer.files) {
+		formData.append('files', file);
+	}
 
-    dropZoneElement.addEventListener("dragover", e => {
-        e.preventDefault();
-        dropZoneElement.classList.add("drop-zone--over");
-    });
+	// Send a fetch POST request to the server with the FormDatat object
+	const response = await fetch('/upload', {
+		method: 'POST',
+		body: formData
+	});
 
-    ["dragleave", "dragend"].forEach(type => {
-        dropZoneElement.addEventListener(type, e => {
-            dropZoneElement.classList.remove("drop-zone--over");
-        });
-    });
-
-    dropZoneElement.addEventListener("drop", e => {
-        e.preventDefault();
-        dropZoneElement.submit();
-
-
-        if(e.dataTransfer.files.length) {
-            inputElement.files = e.dataTransfer.files;
-        }
-
-
-
-        dropZoneElement.classList.remove("drop-zone--over");
-    });
+	// Refresh the page to display the new files
+	location.reload();
 });
