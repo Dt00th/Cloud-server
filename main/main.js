@@ -22,9 +22,11 @@ fetch("/main/files.json")
       const body = card.querySelector("[data-body]")
       const body_embed = card.querySelector("[data-body-embed]")
 
-      body.textContent = file.name
-      body_embed.href = "/files/" + file.name
-      
+      name = file.name;
+      limit = 14;
+      body.textContent = name.substring(0, limit) + (name.length > limit ? "[...]" : "");
+      body_embed.href = "/files/" + file.name;
+
       fileCardContainer.append(card)
       return { name: file, element: card }
     })
@@ -60,11 +62,13 @@ dropZone.addEventListener('drop', async (e) => {
 	}
 
 	// Send a fetch POST request to the server with the FormDatat object
-	const response = await fetch('/upload', {
-		method: 'POST',
-		body: formData
-	});
+	//const response = await fetch('/upload', {
+	//	method: 'POST',
+	//	body: formData
+	//});
+
+	console.log(formData);
 
 	// Refresh the page to display the new files
-	location.reload();
+
 });
