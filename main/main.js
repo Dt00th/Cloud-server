@@ -4,14 +4,6 @@ const searchInput = document.querySelector("[data-search]")
 
 let files = []
 
-searchInput.addEventListener("input", e => {
-  const value = e.target.value.toLowerCase()
-  files.forEach(file => {
-    const isVisible = file.name.toLowerCase().includes(value)
-    file.element.classList.toggle("hide", !isVisible)
-  })
-})
-
 fetch("/main/files.json")
   .then(res => res.json())
   .then(data => {
@@ -25,13 +17,21 @@ fetch("/main/files.json")
       name = file.name;
       limit = 14;
       body.textContent = name.substring(0, limit) + (name.length > limit ? "[...]" : "");
-      body_embed.href = "/files/" + file.name;
+      body_embed.href = file.name;
 
       fileCardContainer.append(card)
-      return { name: file, element: card }
+      return { name: file.name, type : file.type, element: card }
     })
   })
 
+searchInput.addEventListener("input", e => {
+  const value = e.target.value.toLowerCase()
+  files.forEach(file => {
+    console.log(file)
+    const isVisible = file.name.toLowerCase().includes(value)
+    file.element.classList.toggle("hide", !isVisible)
+  })
+})
 
 
 const dropZone = document.getElementById('drop-zone');
@@ -46,6 +46,7 @@ dropZone.addEventListener('dragover', (e) => {
 
 // Handle dragover event to remove highlight when files are dragged out of the drop zone
 dropZone.addEventListener('dragleave', () => {
+	e.preventDefault();
 	dropZone.classList.remove('dragover');
 });
 
@@ -54,6 +55,8 @@ dropZone.addEventListener('drop', async (e) => {
 	e.preventDefault();
 	dropZone.classList.remove('dragover');
 
+	console.log(e)
+
 	const formData = new FormData();
 
 	// Loop through the dropped files and add them to the FormData object
@@ -61,14 +64,13 @@ dropZone.addEventListener('drop', async (e) => {
 		formData.append('files', file);
 	}
 
-	// Send a fetch POST request to the server with the FormDatat object
-	//const response = await fetch('/upload', {
-	//	method: 'POST',
-	//	body: formData
-	//});
-
-	console.log(formData);
+	// Send a fetch POST request to the server with the FormData object
 
 	// Refresh the page to display the new files
-
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		chrome.tabs.sendMessage(tabs[0].id, {greeting: "fuck you, bitch"}, function(response) {
+			alert(response)
+		})
+	})
+	location.reload()
 });

@@ -1,3 +1,5 @@
+import io
+from http import HTTPStatus
 import enum
 import socket
 import ctypes
@@ -44,6 +46,38 @@ class Server(BaseHTTPRequestHandler):
         if f:
             f.close()
 
+    def generate_path_html(self, path):
+        enc = sys.getfilesystemencoding()
+        r = []
+        r.append(f'<html>')
+        r.append(f'	<head>')
+        r.append(f'		<title>Cloud - file visualizer</title>')
+        r.append(f'		<link rel="icon" type="image/png" href="main/images/icon.png">')
+        r.append(f'		<style>')
+        r.append('			iframe {')
+        r.append('			  width: 100%;')
+        r.append('			  height: 100%;')
+        r.append('			  ')
+        r.append('			  ')
+        r.append('			}')
+        r.append(f'		</style>')
+        r.append(f'	</head>')
+        r.append(f'	<body>')
+        r.append(f'		<iframe allowfullscreen margin=center src="/files{self.path}">')
+        r.append(f'		</iframe>')
+        r.append(f'	</body>')
+        r.append(f'</html>')
+        r.append(f'')
+
+        encoded= '\n'.join(r).encode(enc, 'surrogateescape')
+        f = io.BytesIO()
+        f.write(encoded)
+        f.seek(0)
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.end_headers()
+        return f
+
     def send_head(self):
         jsonfile = ('%smain//files.json' % MAINPATH)
         files = ('%sfiles//' % MAINPATH)
@@ -56,24 +90,32 @@ class Server(BaseHTTPRequestHandler):
             open(jsonfile, 'wb').write(bytes(json.dumps(file_list), 'utf-8'))
 
 
-
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
-            if not self.path.endswith('/'):
-                self.send_response(301)
-                self.send_header("Location", self.path + "/")
-                self.end_headers()
-                return None
-            for index in "main/main.html", "main/main.html":
-                index = os.path.join(path, index)
-                if os.path.exists(index):
-                    path = index
-                    break
-            else:
-                return self.generate_path_html(path)
-    
+                print(path + "/files/" + self.path)
+                if not self.path.endswith('/'):
+                    self.send_response(301)
+                    self.send_header("Location", self.path + "/")
+                    self.end_headers()
+                    return None
+                for index in "main/main.html", "main/main.html":
+                    index = os.path.join(path, index)
+                    if os.path.exists(index):
+                        path = index
+                        break;
+        else:
+             if os.path.isfile(path.replace(self.path, "/files" + self.path)):
+                 if os.path.isdir(path.replace(self.path, "")):
+                     f = self.generate_path_html(path)
+                     return f
+
+
         ctype = self.guess_type(path)
+        ctype = ctype.rsplit('/')[0] + '/' + self.path.rsplit('.')[len(self.path.rsplit('.'))-1]
+        if ctype.rsplit('/')[0] == "video":
+            ctype = ctype.rsplit('/')[0] + '/mp4'
+        print(ctype)
         try:
             f = open(path, 'rb')
         except IOError:
@@ -84,43 +126,6 @@ class Server(BaseHTTPRequestHandler):
         fs = os.fstat(f.fileno())
         self.send_header("Content-Length", str(fs[6]))
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
-        self.end_headers()
-
-        return f
-
-    def generate_path_html(self, path):
-        try:
-            list = os.listdir(path)
-        except os.error:
-            self.send_error(404, "No premission to list directory")
-            return None
-
-        list.sort(key=lambda a: (a))
-        f = StringIO()
-        displaypath = html.escape((self.path))
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
-        f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
-        f.write("<hr>\n<ul>\n")
-        for name in list:
-            fullname = os.path.join(path, name)
-            displayname = linkname = name
-            # Append / for directories or @ for symbolic links
-            if os.path.isdir(fullname):
-                displayname = name + "/"
-                linkname = name + "/"
-            if os.path.islink(fullname):
-                displayname = name + "@"
-                # Note: a link to a directory displays with @ and links with /
-            f.write('<li><a href="%s">%s</a>\n'
-                    % (linkname, html.escape(displayname)))
-        f.write("</ul>\n<hr>\n</body>\n</html>\n")
-        length = f.tell()
-        f.seek(0)
-        self.send_response(200)
-        encoding = sys.getfilesystemencoding()
-        self.send_header("Content-type", "text/html; charset=%s" % encoding)
-        self.send_header("Content-Length", str(length))
         self.end_headers()
 
         return f
@@ -170,12 +175,18 @@ class Server(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_PATCH(self):
-        print(self.server)  
+        print(self.server)
         self.send_response(200)
 
     def do_DELETE(self):
-        print(self.client_address)
-        self.send_response(200)
+        ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
+        if ctype == 'multipart/form-data':
+            form = cgi.FieldStorage( fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD':'DELETE', 'CONTENT_TYPE':self.headers['Content-Type'], })
+            filename = form['name']
+            if filename:
+                os.remove("files/%s"%filename, dir_fd = None)
+
+        self.do_GET()
 
     def do_PUT(self):
         print(self.address_string)
