@@ -40,7 +40,7 @@ class Server(BaseHTTPRequestHandler):
         if f:
             self.copyfile(f, self.wfile)
             f.close()
-    
+
     def do_HEAD(self):
         f = self.send_head()
         if f:
@@ -112,9 +112,11 @@ class Server(BaseHTTPRequestHandler):
 
 
         ctype = self.guess_type(path)
-        ctype = ctype.rsplit('/')[0] + '/' + self.path.rsplit('.')[len(self.path.rsplit('.'))-1]
-        if ctype.rsplit('/')[0] == "video":
-            ctype = ctype.rsplit('/')[0] + '/mp4'
+        if ctype.rsplit('/')[1] != "html":
+            ctype = ctype.rsplit('/')[0] + '/' + self.path.rsplit('.')[len(self.path.rsplit('.'))-1]
+            if ctype.rsplit('/')[0] == "video":
+                ctype = ctype.rsplit('/')[0] + '/mp4'
+
         print(ctype)
         try:
             f = open(path, 'rb')
@@ -164,15 +166,34 @@ class Server(BaseHTTPRequestHandler):
             return self.extensions_map['']
 
     def do_POST(self):
-        ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-        if ctype == 'multipart/form-data':
-            form = cgi.FieldStorage( fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD':'POST', 'CONTENT_TYPE':self.headers['Content-Type'], })
-            filename = form['file'].filename
-            data = form['file'].file.read()
-            if filename:
-                open("files/%s"%filename, "wb").write(data)
+       content_type = self.headers['Content-Type']
+       if content_type.startswith('multipart/form-data'):
+           # extract file data from request
+           form = cgi.FieldStorage(
+               fp=self.rfile,
+               headers=self.headers,
+               environ={'REQUEST_METHOD': 'POST'}
+           )
+           file_item = form['file']
+           file_name = file_item.filename
+           file_data = file_item.file.read()
 
-        self.do_GET()
+           # save file to server's file system
+           with open("files/" + file_name, 'wb') as f:
+               f.write(file_data)
+
+           # send response
+           self.send_response(200)
+           self.end_headers()
+
+       # handle other types of POST requests
+       else:
+           # extract data from request
+           content_length = int(self.headers['Content-Length'])
+           request_data = self.rfile.read(content_length)
+
+           # handle request data
+           # ...
 
     def do_PATCH(self):
         print(self.server)
