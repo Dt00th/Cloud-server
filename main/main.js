@@ -4,6 +4,7 @@ const searchInput = document.querySelector("[data-search]")
 
 let files = []
 
+// Handle search bar filtering
 searchInput.addEventListener("input", e => {
   const value = e.target.value.toLowerCase()
   files.forEach(file => {
@@ -12,6 +13,7 @@ searchInput.addEventListener("input", e => {
   })
 })
 
+// Handle creation of cards using fetch
 fetch("/main/files.json")
   .then(res => res.json())
   .then(data => {
@@ -28,7 +30,7 @@ fetch("/main/files.json")
       body_embed.href = file.name;
 
       fileCardContainer.append(card)
-      return { name: file, element: card }
+      return { name: file.name, type: file.type, element: card }
     })
   })
 
@@ -75,3 +77,10 @@ dropZone.addEventListener('drop', (e) => {
 	// Refresh page
 	location.reload()
 })
+
+
+
+// Handle dark/light theme
+const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+
+document.documentElement.setAttribute('data-theme', (isDark?'dark':'light'))

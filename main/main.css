@@ -37,7 +37,7 @@ input {
 
 .card {
   border: 1px solid black;
-  background-color: white;
+  background-color: transparent;
   padding: .5rem;
 }
 

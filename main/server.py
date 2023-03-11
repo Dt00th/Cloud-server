@@ -46,38 +46,6 @@ class Server(BaseHTTPRequestHandler):
         if f:
             f.close()
 
-    def generate_path_html(self, path):
-        enc = sys.getfilesystemencoding()
-        r = []
-        r.append(f'<html>')
-        r.append(f'	<head>')
-        r.append(f'		<title>Cloud - file visualizer</title>')
-        r.append(f'		<link rel="icon" type="image/png" href="main/images/icon.png">')
-        r.append(f'		<style>')
-        r.append('			iframe {')
-        r.append('			  width: 100%;')
-        r.append('			  height: 100%;')
-        r.append('			  ')
-        r.append('			  ')
-        r.append('			}')
-        r.append(f'		</style>')
-        r.append(f'	</head>')
-        r.append(f'	<body>')
-        r.append(f'		<iframe allowfullscreen margin=center src="/files{self.path}">')
-        r.append(f'		</iframe>')
-        r.append(f'	</body>')
-        r.append(f'</html>')
-        r.append(f'')
-
-        encoded= '\n'.join(r).encode(enc, 'surrogateescape')
-        f = io.BytesIO()
-        f.write(encoded)
-        f.seek(0)
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "text/html; charset=%s" % enc)
-        self.end_headers()
-        return f
-
     def send_head(self):
         jsonfile = ('%smain//files.json' % MAINPATH)
         files = ('%sfiles//' % MAINPATH)
@@ -130,6 +98,25 @@ class Server(BaseHTTPRequestHandler):
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
         self.end_headers()
 
+        return f
+
+    def generate_path_html(self, path):
+        enc = sys.getfilesystemencoding()
+        r = []
+        with open('main/vfile.html') as file:
+            r = file.readlines()
+
+        for n, line in enumerate(r):
+            if 'self.path' in line:
+                r[n] = line.replace('/self.path', self.path)
+
+        encoded= '\n'.join(r).encode(enc, 'surrogateescape')
+        f = io.BytesIO()
+        f.write(encoded)
+        f.seek(0)
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.end_headers()
         return f
 
     def translate_path(self, path):
